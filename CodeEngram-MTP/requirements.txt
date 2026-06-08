@@ -1,0 +1,13 @@
+torch
+transformers
+datasets
+tokenizers
+sentencepiece
+pyyaml
+tqdm
+numpy
+pytest
+black
+ruff
+accelerate
+openai

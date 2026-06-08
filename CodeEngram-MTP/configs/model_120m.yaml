@@ -1,0 +1,56 @@
+model:
+  name: "CodeEngram-MTP-120M"
+
+  vocab_size: 32000
+  max_seq_len: 1024
+
+  hidden_size: 768
+  num_layers: 12
+  num_attention_heads: 12
+  intermediate_size: 2048
+
+  norm_type: "rmsnorm"
+  activation: "swiglu"
+  position_embedding: "rope"
+
+  attention_type: "causal"
+  use_flash_attention: false
+
+  dropout: 0.1
+  tie_word_embeddings: true
+
+mtp:
+  enabled: false
+  num_heads: 1
+  t2_loss_weight: 0.3
+  t3_loss_weight: 0.1
+
+engram:
+  enabled: false
+  memory_slots: 50000
+  memory_dim: 768
+  ngram_size: 3
+  injection_layer: 4
+  gate_regularization_weight: 0.01
+
+training:
+  precision: "bf16"
+  batch_size: 8
+  gradient_accumulation_steps: 8
+  learning_rate: 0.0003
+  weight_decay: 0.1
+  warmup_steps: 1000
+  max_steps: 50000
+
+  optimizer: "adamw"
+  scheduler: "cosine"
+
+data:
+  train_path: "data/processed/train.jsonl"
+  val_path: "data/processed/val.jsonl"
+  tokenizer_path: "data/processed/tokenizer"
+
+evaluation:
+  eval_every_steps: 1000
+  save_every_steps: 5000
+  checkpoint_dir: "checkpoints"

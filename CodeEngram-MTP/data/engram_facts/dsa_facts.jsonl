@@ -1,0 +1,6 @@
+{"key": "binary search", "fact": "Binary search works on sorted search space and usually has O(log n) time complexity."}
+{"key": "bfs", "fact": "Breadth-first search usually uses a queue and explores level by level."}
+{"key": "dfs", "fact": "Depth-first search usually uses recursion or a stack."}
+{"key": "hash map lookup", "fact": "Hash map lookup is average O(1), but worst case can be O(n)."}
+{"key": "two pointers", "fact": "Two pointers are often useful for sorted arrays, pair search, and window-like scans."}
+{"key": "sliding window", "fact": "Sliding window is useful for contiguous subarray or substring problems."}

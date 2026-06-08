@@ -1,0 +1,3 @@
+{"id":"two_sum_001","title":"Two Sum","problem":"Given a list of integers nums and an integer target, return indices of two numbers such that they add up to target. Assume exactly one solution exists.","difficulty":"easy","tags":["array","hash-map"]}
+{"id":"binary_search_001","title":"Binary Search","problem":"Given a sorted list of integers nums and an integer target, return the index of target if found, otherwise return -1.","difficulty":"easy","tags":["binary-search","array"]}
+{"id":"valid_parentheses_001","title":"Valid Parentheses","problem":"Given a string containing only brackets '(', ')', '{', '}', '[' and ']', determine whether the input string is valid.","difficulty":"easy","tags":["stack","string"]}
