@@ -4,7 +4,7 @@
 
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-EE4C2C?logo=pytorch&logoColor=white)](https://pytorch.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 
 ---
 
@@ -132,11 +132,6 @@ sLLM/
 
 ---
 
-## 📄 License
-
-This project is released under the [MIT License](LICENSE).
-
----
 
 <p align="center">
   <i>Built from scratch with PyTorch — no pretrained weights, no GPU, no shortcuts.</i>
