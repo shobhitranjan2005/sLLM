@@ -1,4 +1,4 @@
-# 🧠 Efficient Multilingual SLM
+# 🧠 Efficient Multilingual SLLM
 
 > A compact, from-scratch GPT-style language model (1.83M parameters) trained on a mixed **English + Hindi** corpus under extreme resource constraints — **CPU-only, 2,000 optimizer steps, ≤ 2M parameters**.
 
