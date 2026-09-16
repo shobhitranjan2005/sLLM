@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Efficient Multilingual SLM — Summary</title>
+<style>
+  body { font-family: -apple-system, Segoe UI, Arial, sans-serif; max-width: 860px; margin: 40px auto; padding: 0 20px; line-height: 1.55; color: #1a1a1a; }
+  h1 { font-size: 1.6em; margin-bottom: 0.2em; }
+  h2 { font-size: 1.2em; margin-top: 2em; border-bottom: 1px solid #ddd; padding-bottom: 0.3em; }
+  table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+  th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; font-size: 0.95em; }
+  th { background: #f2f2f2; }
+  code { background: #f5f5f5; padding: 1px 5px; border-radius: 3px; font-size: 0.9em; }
+  .best { background: #e8f5e9; font-weight: bold; }
+  .caveat { background: #fff8e1; border-left: 3px solid #f9a825; padding: 8px 12px; margin: 1em 0; font-size: 0.95em; }
+  .split { display: flex; gap: 20px; }
+  .split > div { flex: 1; }
+</style>
+</head>
+<body>
+
+<h1>Efficient Multilingual SLM — Summary</h1>
+<p><em>2,000-step / 2,000,000-param / CPU-only speedrun on a mixed English + Hindi corpus.</em></p>
+
+<h2>Result</h2>
+<table>
+<tr><th>Run</th><th>Change</th><th>Dev BPB</th><th>Params</th></tr>
+<tr><td>Reference baseline*</td><td>Byte tokenizer, Adam</td><td>2.3718</td><td>1,339,840</td></tr>
+<tr><td>Reference*</td><td>+ Unigram tokenizer only</td><td>1.9326</td><td>1,829,520</td></tr>
+<tr><td>Run 2 (this project)</td><td>+ RoPE/RMSNorm/SwiGLU + Muon/AdamW</td><td>1.7210</td><td>1,827,968</td></tr>
+<tr class="best"><td>Run 3 / Final (this project)</td><td>+ ablated Muon → plain Adam</td><td>1.7067</td><td>1,827,968</td></tr>
+</table>
+<p class="caveat">*Reference baseline/Unigram-only rows are figures reported in the project's pre-existing README, from the unmodified starter code on the same corpus and eval files. They were not independently re-run within this project's own session — see RUNLOG.md Run 0.</p>
+<p><strong>Final dev BPB: 1.7067</strong> — a 28.0% relative improvement over the reference byte-tokenizer baseline.</p>
+
+<h2>Architecture</h2>
+<ul>
+  <li><strong>Tokenizer:</strong> SentencePiece Unigram, vocab_size=8192, byte-fallback, <code>normalization_rule_name="identity"</code>, <code>add_dummy_prefix=False</code>. The last two are non-default settings needed specifically because default SentencePiece normalization and prefix-space insertion silently break exact <code>decode(encode(text)) == text</code> round-trip on Devanagari text — verified lossless before training (<code>round_trip_ok=True</code>).</li>
+  <li><strong>Position encoding:</strong> RoPE (rotary), replacing learned absolute position embeddings — frees the <code>block_size × n_embd</code> parameter table and encodes relative position, which needs fewer gradient steps to become useful than a learned table trained from scratch.</li>
+  <li><strong>Normalization:</strong> RMSNorm, replacing LayerNorm — drops mean-centering and the bias term.</li>
+  <li><strong>MLP:</strong> SwiGLU (gate/up/down, hidden dim ≈ 2/3 of the standard 4× GELU-MLP hidden size to hold parameter count roughly constant).</li>
+  <li><strong>Init:</strong> GPT-2-style scaled residual init — each block's residual-stream output projection (attention proj, MLP down-projection) initialized with std scaled by <code>1/√(2·n_layer)</code>, keeping residual-stream variance from compounding with depth.</li>
+  <li><strong>Weight tying:</strong> token embedding and output head share weights.</li>
+  <li><strong>Optimizer (final):</strong> plain Adam (lr=3e-3, betas=(0.9, 0.95)), linear warmup over 100 steps, cosine decay to 10% of peak LR, global gradient-norm clipping at 1.0.</li>
+  <li><strong>Config:</strong> n_layer=4, n_head=4, n_embd=128, block_size=256, dropout=0.0. Total: 1,827,968 params (cap: 2,000,000).</li>
+</ul>
+
+<h2>What we tried and rejected</h2>
+<p><strong>Muon optimizer</strong> (Newton-Schulz orthogonalized updates) for the 2D transformer-block matrices, AdamW for embeddings/norms — motivated by the nanoGPT-speedrun result that orthogonalized updates converge faster per-step within small, fixed step budgets. Ablated head-to-head against plain Adam with the architecture held fixed: Muon+AdamW scored 1.7210 bpb, plain Adam scored 1.7067 bpb — Muon lost by 0.83% relative, consistently across the entire training curve, at roughly equal wall-clock time. Most likely explanation: the ablation reused the AdamW-tuned learning rate for the all-Adam run instead of independently tuning each optimizer, and Muon's typical advantage is better established at larger batch sizes than the batch size of 8 used here. We shipped the simpler, better-scoring plain-Adam configuration rather than chasing a fix for Muon, given the cost of further full 2,000-step runs (~11 min each) against the marginal potential upside. Full detail in RUNLOG.md Run 3.</p>
+
+<h2>Full run log and notes</h2>
+<p>See <code>RUNLOG.md</code> for the complete per-run hypothesis/command/result/conclusion breakdown, and <code>NOTES.md</code> for the condensed final-configuration summary.</p>
+
+<h2>Human vs. AI contribution</h2>
+<div class="split">
+<div>
+<h3>AI-assisted</h3>
+<ul>
+  <li>Initial architecture proposal (RoPE/RMSNorm/SwiGLU/scaled init) and rationale, keyed to the assignment's own hint about Devanagari byte-length</li>
+  <li>Tokenizer flag selection and the reasoning for why default SentencePiece settings break losslessness on Devanagari</li>
+  <li>Muon optimizer implementation and the proposal to try it</li>
+  <li>Drafted code for tokenizer.py, train_unigram.py, model.py, muon.py, train.py</li>
+  <li>Proposed the Muon-vs-Adam ablation design after seeing the first full run's result</li>
+</ul>
+</div>
+<div>
+<h3>Human-done</h3>
+<ul>
+  <li>Reviewed and pushed back on the friend's original README/approach before adopting any of it</li>
+  <li>Ran every command locally, including the tokenizer round-trip check, param-count check, and both full 2,000-step training runs</li>
+  <li>Found and reported an actual runtime bug in the AI-drafted ablation code (UnboundLocalError), which was then fixed</li>
+  <li>Owns every number in this document — all bpb/param/timing figures above are copy-pasted from actual local <code>evaluate.py</code>/<code>train.py</code> output, not estimated or fabricated</li>
+  <li>Made the final call to ship the plain-Adam checkpoint over the Muon checkpoint based on the ablation result</li>
+</ul>
+</div>
+</div>
+
+</body>
+</html>

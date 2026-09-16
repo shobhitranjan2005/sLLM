@@ -1,1 +1,19 @@
-.aider*
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Assignment-provided data — do not publish (see note above)
+data/train_corpus.txt
+data/dev_eval.txt
+
+# Sweep/smoke-test artifacts, not final deliverables
+starter/_smoke*
+starter/sweep_v*.pt
+starter/tok_v2048.*
+starter/tok_v4096.*
+starter/tok_v16384.*
+
+# OS cruft
+.DS_Store
+Thumbs.db
